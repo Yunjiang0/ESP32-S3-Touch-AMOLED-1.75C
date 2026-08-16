@@ -20,6 +20,8 @@
 #define APP_NAME "Wallpaper"
 #define WALLPAPER_DIR "/storage/wallpapers"
 #define MAX_GIF_SIZE (500 * 1024)  // 500KB limit for GIF
+#define LONG_PRESS_TIME_MS 800     // 长按时间阈值
+#define SWIPE_THRESHOLD 50         // 滑动检测阈值
 
 using namespace std;
 using namespace esp_brookesia::gui;
@@ -65,9 +67,10 @@ bool WallpaperApp::run(void)
     lv_obj_set_style_bg_opa(m_root, LV_OPA_COVER, 0);
     lv_obj_center(m_root);
 
-    // Add touch event handler
+    // Add touch event handler for gestures and long press
     lv_obj_add_flag(m_root, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(m_root, touchEventCallback, LV_EVENT_PRESSED, this);
+    lv_obj_add_event_cb(m_root, touchEventCallback, LV_EVENT_PRESSING, this);
     lv_obj_add_event_cb(m_root, touchEventCallback, LV_EVENT_RELEASED, this);
 
     // Scan wallpapers
@@ -82,7 +85,16 @@ bool WallpaperApp::run(void)
         lv_obj_center(label);
     } else {
         ESP_UTILS_LOGI("Found %d wallpapers", (int)m_wallpapers.size());
-        showCurrent();
+        
+        // 先显示加载提示
+        showLoadingHint();
+        
+        // 延迟加载第一张图，让 UI 先渲染
+        lv_timer_create([](lv_timer_t *t) {
+            WallpaperApp *app = (WallpaperApp *)t->user_data;
+            app->showCurrent();
+            lv_timer_delete(t);
+        }, 100, this);
 
         // Create auto-rotation timer
         m_timer = lv_timer_create(timerCallback, m_interval_ms, this);
@@ -106,7 +118,13 @@ bool WallpaperApp::close(void)
         lv_timer_delete(m_timer);
         m_timer = nullptr;
     }
+    
+    if (m_long_press_timer) {
+        lv_timer_delete(m_long_press_timer);
+        m_long_press_timer = nullptr;
+    }
 
+    closeSettingsPanel();
     clearPlayer();
 
     return true;
@@ -203,6 +221,9 @@ void WallpaperApp::showCurrent()
 
     const std::string &path = m_wallpapers[m_current_index];
     ESP_UTILS_LOGI("Showing: %s (%d/%d)", path.c_str(), m_current_index + 1, (int)m_wallpapers.size());
+
+    // 隐藏加载提示
+    hideLoadingHint();
 
     if (isGif(path)) {
         showGif(path);
@@ -356,9 +377,48 @@ void WallpaperApp::touchEventCallback(lv_event_t *e)
         if (indev) {
             lv_indev_get_point(indev, &app->m_touch_start);
             app->m_touch_active = true;
+            app->m_touch_time = lv_tick_get();
+            app->m_long_press_triggered = false;
+            
+            // 启动长按检测定时器
+            if (app->m_long_press_timer) {
+                lv_timer_delete(app->m_long_press_timer);
+            }
+            app->m_long_press_timer = lv_timer_create(longPressTimerCallback, LONG_PRESS_TIME_MS, app);
+            lv_timer_set_repeat_count(app->m_long_press_timer, 1);
+        }
+    } else if (code == LV_EVENT_PRESSING) {
+        // 检查是否移动太多（移动则取消长按）
+        if (app->m_touch_active && !app->m_long_press_triggered) {
+            lv_indev_t *indev = lv_indev_active();
+            if (indev) {
+                lv_point_t current;
+                lv_indev_get_point(indev, &current);
+                int32_t dx = current.x - app->m_touch_start.x;
+                int32_t dy = current.y - app->m_touch_start.y;
+                
+                // 移动超过阈值，取消长按
+                if (abs(dx) > 20 || abs(dy) > 20) {
+                    if (app->m_long_press_timer) {
+                        lv_timer_delete(app->m_long_press_timer);
+                        app->m_long_press_timer = nullptr;
+                    }
+                }
+            }
         }
     } else if (code == LV_EVENT_RELEASED && app->m_touch_active) {
         app->m_touch_active = false;
+        
+        // 删除长按定时器
+        if (app->m_long_press_timer) {
+            lv_timer_delete(app->m_long_press_timer);
+            app->m_long_press_timer = nullptr;
+        }
+        
+        // 如果已经触发了长按，不再处理滑动
+        if (app->m_long_press_triggered) {
+            return;
+        }
         
         lv_indev_t *indev = lv_indev_active();
         if (indev) {
@@ -368,8 +428,8 @@ void WallpaperApp::touchEventCallback(lv_event_t *e)
             int32_t dx = touch_end.x - app->m_touch_start.x;
             int32_t dy = touch_end.y - app->m_touch_start.y;
 
-            // Horizontal swipe detection (threshold 50px)
-            if (abs(dx) > 50 && abs(dx) > abs(dy)) {
+            // Horizontal swipe detection
+            if (abs(dx) > SWIPE_THRESHOLD && abs(dx) > abs(dy)) {
                 if (dx < 0) {
                     ESP_UTILS_LOGI("Swipe LEFT -> next");
                     app->showNext();
@@ -378,6 +438,126 @@ void WallpaperApp::touchEventCallback(lv_event_t *e)
                     app->showPrev();
                 }
             }
+        }
+    }
+}
+
+void WallpaperApp::longPressTimerCallback(lv_timer_t *timer)
+{
+    WallpaperApp *app = (WallpaperApp *)timer->user_data;
+    if (!app || !app->m_touch_active) return;
+    
+    app->m_long_press_triggered = true;
+    app->m_long_press_timer = nullptr;
+    
+    ESP_UTILS_LOGI("Long press detected -> open settings");
+    app->openSettingsPanel();
+}
+
+void WallpaperApp::showLoadingHint()
+{
+    if (m_loading_label) {
+        lv_obj_del(m_loading_label);
+    }
+    m_loading_label = lv_label_create(m_root);
+    lv_label_set_text(m_loading_label, "Loading...");
+    lv_obj_set_style_text_color(m_loading_label, lv_color_white(), 0);
+    lv_obj_set_style_text_font(m_loading_label, &lv_font_montserrat_20, 0);
+    lv_obj_center(m_loading_label);
+}
+
+void WallpaperApp::hideLoadingHint()
+{
+    if (m_loading_label) {
+        lv_obj_del(m_loading_label);
+        m_loading_label = nullptr;
+    }
+}
+
+void WallpaperApp::openSettingsPanel()
+{
+    if (m_settings_panel) return;  // 已经打开
+    
+    // 暂停自动轮播
+    if (m_timer) {
+        lv_timer_pause(m_timer);
+    }
+    
+    // 创建半透明背景
+    m_settings_panel = lv_obj_create(m_root);
+    lv_obj_remove_style_all(m_settings_panel);
+    lv_obj_set_size(m_settings_panel, 300, 200);
+    lv_obj_set_style_bg_color(m_settings_panel, lv_color_make(40, 40, 40), 0);
+    lv_obj_set_style_bg_opa(m_settings_panel, LV_OPA_90, 0);
+    lv_obj_set_style_radius(m_settings_panel, 20, 0);
+    lv_obj_set_style_pad_all(m_settings_panel, 20, 0);
+    lv_obj_center(m_settings_panel);
+    
+    // 标题
+    lv_obj_t *title = lv_label_create(m_settings_panel);
+    lv_label_set_text(title, "Settings");
+    lv_obj_set_style_text_color(title, lv_color_white(), 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 0);
+    
+    // 间隔时间设置
+    lv_obj_t *interval_label = lv_label_create(m_settings_panel);
+    lv_label_set_text(interval_label, "Interval:");
+    lv_obj_set_style_text_color(interval_label, lv_color_white(), 0);
+    lv_obj_align(interval_label, LV_ALIGN_TOP_LEFT, 0, 40);
+    
+    lv_obj_t *interval_value = lv_label_create(m_settings_panel);
+    lv_label_set_text_fmt(interval_value, "%d sec", m_interval_ms / 1000);
+    lv_obj_set_style_text_color(interval_value, lv_color_hex(0x00FF00), 0);
+    lv_obj_align(interval_value, LV_ALIGN_TOP_RIGHT, 0, 40);
+    
+    // 壁纸数量
+    lv_obj_t *count_label = lv_label_create(m_settings_panel);
+    lv_label_set_text(count_label, "Wallpapers:");
+    lv_obj_set_style_text_color(count_label, lv_color_white(), 0);
+    lv_obj_align(count_label, LV_ALIGN_TOP_LEFT, 0, 70);
+    
+    lv_obj_t *count_value = lv_label_create(m_settings_panel);
+    lv_label_set_text_fmt(count_value, "%d", (int)m_wallpapers.size());
+    lv_obj_set_style_text_color(count_value, lv_color_hex(0x00FF00), 0);
+    lv_obj_align(count_value, LV_ALIGN_TOP_RIGHT, 0, 70);
+    
+    // 当前索引
+    lv_obj_t *current_label = lv_label_create(m_settings_panel);
+    lv_label_set_text(current_label, "Current:");
+    lv_obj_set_style_text_color(current_label, lv_color_white(), 0);
+    lv_obj_align(current_label, LV_ALIGN_TOP_LEFT, 0, 100);
+    
+    lv_obj_t *current_value = lv_label_create(m_settings_panel);
+    lv_label_set_text_fmt(current_value, "%d / %d", m_current_index + 1, (int)m_wallpapers.size());
+    lv_obj_set_style_text_color(current_value, lv_color_hex(0x00FF00), 0);
+    lv_obj_align(current_value, LV_ALIGN_TOP_RIGHT, 0, 100);
+    
+    // 关闭按钮
+    lv_obj_t *close_btn = lv_btn_create(m_settings_panel);
+    lv_obj_set_size(close_btn, 100, 40);
+    lv_obj_align(close_btn, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_obj_set_style_bg_color(close_btn, lv_color_hex(0x404040), 0);
+    lv_obj_add_event_cb(close_btn, [](lv_event_t *e) {
+        WallpaperApp *app = (WallpaperApp *)lv_event_get_user_data(e);
+        app->closeSettingsPanel();
+    }, LV_EVENT_CLICKED, this);
+    
+    lv_obj_t *btn_label = lv_label_create(close_btn);
+    lv_label_set_text(btn_label, "Close");
+    lv_obj_center(btn_label);
+}
+
+void WallpaperApp::closeSettingsPanel()
+{
+    if (m_settings_panel) {
+        lv_obj_del(m_settings_panel);
+        m_settings_panel = nullptr;
+        
+        // 恢复自动轮播
+        if (m_timer) {
+            lv_timer_resume(m_timer);
+            lv_timer_reset(m_timer);
         }
     }
 }

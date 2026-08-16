@@ -74,6 +74,9 @@ private:
     lv_obj_t *m_player_obj = nullptr;   // For GIF
     void *m_player_buf = nullptr;        // GIF memory buffer
     lv_timer_t *m_timer = nullptr;
+    lv_obj_t *m_loading_label = nullptr;
+    lv_obj_t *m_settings_panel = nullptr;
+    lv_timer_t *m_long_press_timer = nullptr;
 
     // Wallpaper list
     std::vector<std::string> m_wallpapers;
@@ -85,6 +88,8 @@ private:
     // Touch handling
     lv_point_t m_touch_start;
     bool m_touch_active = false;
+    uint32_t m_touch_time = 0;
+    bool m_long_press_triggered = false;
 
     // Methods
     void scanWallpapers();
@@ -95,9 +100,14 @@ private:
     void showNext();
     void showPrev();
     bool isGif(const std::string &path);
+    void showLoadingHint();
+    void hideLoadingHint();
+    void openSettingsPanel();
+    void closeSettingsPanel();
 
     static void timerCallback(lv_timer_t *timer);
     static void touchEventCallback(lv_event_t *e);
+    static void longPressTimerCallback(lv_timer_t *timer);
 };
 
 } // namespace esp_brookesia::apps
