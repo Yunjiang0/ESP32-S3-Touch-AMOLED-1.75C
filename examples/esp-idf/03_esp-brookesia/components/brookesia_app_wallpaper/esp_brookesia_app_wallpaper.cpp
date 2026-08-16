@@ -483,73 +483,97 @@ void WallpaperApp::openSettingsPanel()
         lv_timer_pause(m_timer);
     }
     
-    // 圆形屏幕适配：466x466，圆心233
-    // 面板尺寸需要小一些才能完全在圆内显示
-    // 宽度 260，高度 180，留出足够边距
-    m_settings_panel = lv_obj_create(m_root);
-    lv_obj_remove_style_all(m_settings_panel);
-    lv_obj_set_size(m_settings_panel, 260, 180);
-    lv_obj_set_style_bg_color(m_settings_panel, lv_color_make(30, 30, 30), 0);
-    lv_obj_set_style_bg_opa(m_settings_panel, LV_OPA_90, 0);
-    lv_obj_set_style_radius(m_settings_panel, 16, 0);
-    lv_obj_set_style_pad_left(m_settings_panel, 16, 0);
-    lv_obj_set_style_pad_right(m_settings_panel, 16, 0);
-    lv_obj_set_style_pad_top(m_settings_panel, 12, 0);
-    lv_obj_set_style_pad_bottom(m_settings_panel, 12, 0);
-    lv_obj_center(m_settings_panel);
+    // 全屏设置面板，参考完整版 wallpaper-app 风格
+    m_settings_panel = lv_obj_create(lv_scr_act());
+    lv_obj_set_size(m_settings_panel, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_style_bg_color(m_settings_panel, lv_color_hex(0x1a1a2e), 0);
+    lv_obj_set_style_bg_opa(m_settings_panel, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(m_settings_panel, 0, 0);
+    lv_obj_set_style_pad_all(m_settings_panel, 0, 0);
+    lv_obj_set_style_radius(m_settings_panel, LV_RADIUS_CIRCLE, 0);
+    lv_obj_clear_flag(m_settings_panel, LV_OBJ_FLAG_SCROLLABLE);
     
     // 标题
     lv_obj_t *title = lv_label_create(m_settings_panel);
     lv_label_set_text(title, "Settings");
     lv_obj_set_style_text_color(title, lv_color_white(), 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_18, 0);
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 50);
     
-    // 间隔时间设置 - 紧凑布局
-    lv_obj_t *interval_label = lv_label_create(m_settings_panel);
-    lv_label_set_text(interval_label, "Interval:");
-    lv_obj_set_style_text_color(interval_label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(interval_label, &lv_font_montserrat_14, 0);
-    lv_obj_align(interval_label, LV_ALIGN_TOP_LEFT, 0, 32);
+    // 可滚动内容区域
+    lv_obj_t *content = lv_obj_create(m_settings_panel);
+    lv_obj_set_size(content, 280, 280);
+    lv_obj_align(content, LV_ALIGN_CENTER, 0, 20);
+    lv_obj_set_style_bg_opa(content, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(content, 0, 0);
+    lv_obj_set_style_pad_all(content, 5, 0);
+    lv_obj_set_style_pad_row(content, 10, 0);
+    lv_obj_set_flex_flow(content, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_scroll_dir(content, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(content, LV_SCROLLBAR_MODE_OFF);
     
-    lv_obj_t *interval_value = lv_label_create(m_settings_panel);
-    lv_label_set_text_fmt(interval_value, "%lu sec", (unsigned long)(m_interval_ms / 1000));
-    lv_obj_set_style_text_color(interval_value, lv_color_hex(0x00FF00), 0);
-    lv_obj_set_style_text_font(interval_value, &lv_font_montserrat_14, 0);
-    lv_obj_align(interval_value, LV_ALIGN_TOP_RIGHT, 0, 32);
+    // 创建设置行的辅助 lambda
+    auto create_row = [&](const char *label_text, const char *value_text) -> lv_obj_t* {
+        lv_obj_t *row = lv_obj_create(content);
+        lv_obj_set_size(row, 260, 50);
+        lv_obj_set_style_bg_color(row, lv_color_hex(0x16213e), 0);
+        lv_obj_set_style_bg_opa(row, LV_OPA_COVER, 0);
+        lv_obj_set_style_border_width(row, 0, 0);
+        lv_obj_set_style_radius(row, 12, 0);
+        lv_obj_set_style_pad_hor(row, 12, 0);
+        lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+        
+        lv_obj_t *label = lv_label_create(row);
+        lv_label_set_text(label, label_text);
+        lv_obj_set_style_text_color(label, lv_color_white(), 0);
+        lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+        lv_obj_align(label, LV_ALIGN_LEFT_MID, 0, 0);
+        
+        lv_obj_t *value = lv_label_create(row);
+        lv_label_set_text(value, value_text);
+        lv_obj_set_style_text_color(value, lv_color_hex(0x00d4ff), 0);
+        lv_obj_set_style_text_font(value, &lv_font_montserrat_16, 0);
+        lv_obj_align(value, LV_ALIGN_RIGHT_MID, 0, 0);
+        
+        return row;
+    };
     
-    // 壁纸数量
-    lv_obj_t *count_label = lv_label_create(m_settings_panel);
-    lv_label_set_text(count_label, "Wallpapers:");
-    lv_obj_set_style_text_color(count_label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(count_label, &lv_font_montserrat_14, 0);
-    lv_obj_align(count_label, LV_ALIGN_TOP_LEFT, 0, 56);
+    // Interval 行
+    char interval_buf[16];
+    snprintf(interval_buf, sizeof(interval_buf), "%lu sec", (unsigned long)(m_interval_ms / 1000));
+    create_row("Interval", interval_buf);
     
-    lv_obj_t *count_value = lv_label_create(m_settings_panel);
-    lv_label_set_text_fmt(count_value, "%d", (int)m_wallpapers.size());
-    lv_obj_set_style_text_color(count_value, lv_color_hex(0x00FF00), 0);
-    lv_obj_set_style_text_font(count_value, &lv_font_montserrat_14, 0);
-    lv_obj_align(count_value, LV_ALIGN_TOP_RIGHT, 0, 56);
+    // Wallpapers 行
+    char count_buf[16];
+    snprintf(count_buf, sizeof(count_buf), "%d", (int)m_wallpapers.size());
+    create_row("Wallpapers", count_buf);
     
-    // 当前索引
-    lv_obj_t *current_label = lv_label_create(m_settings_panel);
-    lv_label_set_text(current_label, "Current:");
-    lv_obj_set_style_text_color(current_label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(current_label, &lv_font_montserrat_14, 0);
-    lv_obj_align(current_label, LV_ALIGN_TOP_LEFT, 0, 80);
+    // Current 行
+    char current_buf[16];
+    snprintf(current_buf, sizeof(current_buf), "%d / %d", m_current_index + 1, (int)m_wallpapers.size());
+    create_row("Current", current_buf);
     
-    lv_obj_t *current_value = lv_label_create(m_settings_panel);
-    lv_label_set_text_fmt(current_value, "%d / %d", m_current_index + 1, (int)m_wallpapers.size());
-    lv_obj_set_style_text_color(current_value, lv_color_hex(0x00FF00), 0);
-    lv_obj_set_style_text_font(current_value, &lv_font_montserrat_14, 0);
-    lv_obj_align(current_value, LV_ALIGN_TOP_RIGHT, 0, 80);
+    // 提示行
+    lv_obj_t *hint_row = lv_obj_create(content);
+    lv_obj_set_size(hint_row, 260, 50);
+    lv_obj_set_style_bg_color(hint_row, lv_color_hex(0x16213e), 0);
+    lv_obj_set_style_bg_opa(hint_row, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(hint_row, 0, 0);
+    lv_obj_set_style_radius(hint_row, 12, 0);
+    lv_obj_clear_flag(hint_row, LV_OBJ_FLAG_SCROLLABLE);
     
-    // 关闭按钮 - 更紧凑
-    lv_obj_t *close_btn = lv_btn_create(m_settings_panel);
-    lv_obj_set_size(close_btn, 80, 36);
-    lv_obj_align(close_btn, LV_ALIGN_BOTTOM_MID, 0, 0);
-    lv_obj_set_style_bg_color(close_btn, lv_color_hex(0x505050), 0);
-    lv_obj_set_style_radius(close_btn, 8, 0);
+    lv_obj_t *hint = lv_label_create(hint_row);
+    lv_label_set_text(hint, LV_SYMBOL_LEFT " Swipe " LV_SYMBOL_RIGHT);
+    lv_obj_set_style_text_color(hint, lv_color_hex(0x888888), 0);
+    lv_obj_set_style_text_font(hint, &lv_font_montserrat_14, 0);
+    lv_obj_center(hint);
+    
+    // 关闭按钮
+    lv_obj_t *close_btn = lv_btn_create(content);
+    lv_obj_set_size(close_btn, 260, 50);
+    lv_obj_set_style_bg_color(close_btn, lv_color_hex(0x444444), 0);
+    lv_obj_set_style_radius(close_btn, 12, 0);
     lv_obj_add_event_cb(close_btn, [](lv_event_t *e) {
         WallpaperApp *app = (WallpaperApp *)lv_event_get_user_data(e);
         app->closeSettingsPanel();
@@ -557,7 +581,8 @@ void WallpaperApp::openSettingsPanel()
     
     lv_obj_t *btn_label = lv_label_create(close_btn);
     lv_label_set_text(btn_label, "Close");
-    lv_obj_set_style_text_font(btn_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(btn_label, lv_color_white(), 0);
+    lv_obj_set_style_text_font(btn_label, &lv_font_montserrat_16, 0);
     lv_obj_center(btn_label);
 }
 
