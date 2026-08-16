@@ -143,8 +143,8 @@ extern "C" void app_main(void)
         /* Initialize status bar icons */
         // Set battery to 100% (no real battery on this board, just for display)
         phone->getDisplay().getStatusBar()->setBatteryPercent(false, 100);
-        // Set WiFi icon to closed (will be updated when WiFi is connected)
-        phone->getDisplay().getStatusBar()->setWifiIconState(StatusBar::WifiState::CLOSED);
+        // Set WiFi icon to disconnected (will be updated when WiFi is connected)
+        phone->getDisplay().getStatusBar()->setWifiIconState(StatusBar::WifiState::DISCONNECTED);
     }
 
     if constexpr (EXAMPLE_SHOW_MEM_INFO) {
