@@ -483,61 +483,73 @@ void WallpaperApp::openSettingsPanel()
         lv_timer_pause(m_timer);
     }
     
-    // 创建半透明背景
+    // 圆形屏幕适配：466x466，圆心233
+    // 面板尺寸需要小一些才能完全在圆内显示
+    // 宽度 260，高度 180，留出足够边距
     m_settings_panel = lv_obj_create(m_root);
     lv_obj_remove_style_all(m_settings_panel);
-    lv_obj_set_size(m_settings_panel, 300, 200);
-    lv_obj_set_style_bg_color(m_settings_panel, lv_color_make(40, 40, 40), 0);
+    lv_obj_set_size(m_settings_panel, 260, 180);
+    lv_obj_set_style_bg_color(m_settings_panel, lv_color_make(30, 30, 30), 0);
     lv_obj_set_style_bg_opa(m_settings_panel, LV_OPA_90, 0);
-    lv_obj_set_style_radius(m_settings_panel, 20, 0);
-    lv_obj_set_style_pad_all(m_settings_panel, 20, 0);
+    lv_obj_set_style_radius(m_settings_panel, 16, 0);
+    lv_obj_set_style_pad_left(m_settings_panel, 16, 0);
+    lv_obj_set_style_pad_right(m_settings_panel, 16, 0);
+    lv_obj_set_style_pad_top(m_settings_panel, 12, 0);
+    lv_obj_set_style_pad_bottom(m_settings_panel, 12, 0);
     lv_obj_center(m_settings_panel);
     
     // 标题
     lv_obj_t *title = lv_label_create(m_settings_panel);
     lv_label_set_text(title, "Settings");
     lv_obj_set_style_text_color(title, lv_color_white(), 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_18, 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 0);
     
-    // 间隔时间设置
+    // 间隔时间设置 - 紧凑布局
     lv_obj_t *interval_label = lv_label_create(m_settings_panel);
     lv_label_set_text(interval_label, "Interval:");
     lv_obj_set_style_text_color(interval_label, lv_color_white(), 0);
-    lv_obj_align(interval_label, LV_ALIGN_TOP_LEFT, 0, 40);
+    lv_obj_set_style_text_font(interval_label, &lv_font_montserrat_14, 0);
+    lv_obj_align(interval_label, LV_ALIGN_TOP_LEFT, 0, 32);
     
     lv_obj_t *interval_value = lv_label_create(m_settings_panel);
     lv_label_set_text_fmt(interval_value, "%d sec", m_interval_ms / 1000);
     lv_obj_set_style_text_color(interval_value, lv_color_hex(0x00FF00), 0);
-    lv_obj_align(interval_value, LV_ALIGN_TOP_RIGHT, 0, 40);
+    lv_obj_set_style_text_font(interval_value, &lv_font_montserrat_14, 0);
+    lv_obj_align(interval_value, LV_ALIGN_TOP_RIGHT, 0, 32);
     
     // 壁纸数量
     lv_obj_t *count_label = lv_label_create(m_settings_panel);
     lv_label_set_text(count_label, "Wallpapers:");
     lv_obj_set_style_text_color(count_label, lv_color_white(), 0);
-    lv_obj_align(count_label, LV_ALIGN_TOP_LEFT, 0, 70);
+    lv_obj_set_style_text_font(count_label, &lv_font_montserrat_14, 0);
+    lv_obj_align(count_label, LV_ALIGN_TOP_LEFT, 0, 56);
     
     lv_obj_t *count_value = lv_label_create(m_settings_panel);
     lv_label_set_text_fmt(count_value, "%d", (int)m_wallpapers.size());
     lv_obj_set_style_text_color(count_value, lv_color_hex(0x00FF00), 0);
-    lv_obj_align(count_value, LV_ALIGN_TOP_RIGHT, 0, 70);
+    lv_obj_set_style_text_font(count_value, &lv_font_montserrat_14, 0);
+    lv_obj_align(count_value, LV_ALIGN_TOP_RIGHT, 0, 56);
     
     // 当前索引
     lv_obj_t *current_label = lv_label_create(m_settings_panel);
     lv_label_set_text(current_label, "Current:");
     lv_obj_set_style_text_color(current_label, lv_color_white(), 0);
-    lv_obj_align(current_label, LV_ALIGN_TOP_LEFT, 0, 100);
+    lv_obj_set_style_text_font(current_label, &lv_font_montserrat_14, 0);
+    lv_obj_align(current_label, LV_ALIGN_TOP_LEFT, 0, 80);
     
     lv_obj_t *current_value = lv_label_create(m_settings_panel);
     lv_label_set_text_fmt(current_value, "%d / %d", m_current_index + 1, (int)m_wallpapers.size());
     lv_obj_set_style_text_color(current_value, lv_color_hex(0x00FF00), 0);
-    lv_obj_align(current_value, LV_ALIGN_TOP_RIGHT, 0, 100);
+    lv_obj_set_style_text_font(current_value, &lv_font_montserrat_14, 0);
+    lv_obj_align(current_value, LV_ALIGN_TOP_RIGHT, 0, 80);
     
-    // 关闭按钮
+    // 关闭按钮 - 更紧凑
     lv_obj_t *close_btn = lv_btn_create(m_settings_panel);
-    lv_obj_set_size(close_btn, 100, 40);
+    lv_obj_set_size(close_btn, 80, 36);
     lv_obj_align(close_btn, LV_ALIGN_BOTTOM_MID, 0, 0);
-    lv_obj_set_style_bg_color(close_btn, lv_color_hex(0x404040), 0);
+    lv_obj_set_style_bg_color(close_btn, lv_color_hex(0x505050), 0);
+    lv_obj_set_style_radius(close_btn, 8, 0);
     lv_obj_add_event_cb(close_btn, [](lv_event_t *e) {
         WallpaperApp *app = (WallpaperApp *)lv_event_get_user_data(e);
         app->closeSettingsPanel();
@@ -545,6 +557,7 @@ void WallpaperApp::openSettingsPanel()
     
     lv_obj_t *btn_label = lv_label_create(close_btn);
     lv_label_set_text(btn_label, "Close");
+    lv_obj_set_style_text_font(btn_label, &lv_font_montserrat_14, 0);
     lv_obj_center(btn_label);
 }
 
