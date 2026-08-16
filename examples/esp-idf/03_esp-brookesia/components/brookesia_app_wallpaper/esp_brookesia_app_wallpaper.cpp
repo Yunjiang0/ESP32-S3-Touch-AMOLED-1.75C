@@ -394,3 +394,8 @@ ESP_UTILS_REGISTER_PLUGIN_WITH_CONSTRUCTOR(systems::base::App, WallpaperApp, APP
 })
 
 } // namespace esp_brookesia::apps
+
+// Force link symbol - must be referenced from main to prevent linker from discarding
+extern "C" {
+    volatile int esp_brookesia_app_wallpaper_force_link = 0;
+}

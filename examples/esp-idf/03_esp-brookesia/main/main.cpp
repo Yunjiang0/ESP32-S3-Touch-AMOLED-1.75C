@@ -15,6 +15,7 @@
 
 // Force link wallpaper app component
 #include "esp_brookesia_app_wallpaper.hpp"
+extern "C" { extern volatile int esp_brookesia_app_wallpaper_force_link; }
 
 // 466x466 round display stylesheet
 #include "stylesheets/466_466/dark/stylesheet.hpp"
@@ -28,6 +29,9 @@ constexpr uint32_t LVGL_TASK_STACK_SIZE = 40 * 1024;
 
 extern "C" void app_main(void)
 {
+    // Force link the wallpaper app
+    (void)esp_brookesia_app_wallpaper_force_link;
+
     ESP_UTILS_LOGI("Display ESP-Brookesia phone demo");
 
     /* Brookesia screen creation exceeds the adapter's 8 KB default on this board. */
