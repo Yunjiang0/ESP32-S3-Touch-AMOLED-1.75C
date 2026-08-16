@@ -23,6 +23,10 @@ extern "C" { extern volatile int esp_brookesia_app_wallpaper_force_link; }
 #include "esp_brookesia_app_clock.hpp"
 extern "C" { extern volatile int esp_brookesia_app_clock_force_link; }
 
+// Force link uploader app component
+#include "esp_brookesia_app_uploader.hpp"
+extern "C" { extern volatile int esp_brookesia_app_uploader_force_link; }
+
 // 466x466 round display stylesheet
 #include "stylesheets/466_466/dark/stylesheet.hpp"
 
@@ -65,6 +69,7 @@ extern "C" void app_main(void)
     (void)esp_brookesia_app_wallpaper_force_link;
     // Force link the clock app
     (void)esp_brookesia_app_clock_force_link;
+    (void)esp_brookesia_app_uploader_force_link;
 
     ESP_UTILS_LOGI("Display ESP-Brookesia phone demo");
 

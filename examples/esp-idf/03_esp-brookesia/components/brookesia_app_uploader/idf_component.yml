@@ -1,0 +1,5 @@
+description: "WiFi Uploader App for ESP-Brookesia"
+version: "1.0.0"
+dependencies:
+  espressif/brookesia_core: "*"
+  joltwallet/littlefs: "*"
