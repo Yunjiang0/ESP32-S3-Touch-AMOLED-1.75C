@@ -77,6 +77,8 @@ private:
     lv_obj_t *m_loading_label = nullptr;
     lv_obj_t *m_settings_panel = nullptr;
     lv_timer_t *m_long_press_timer = nullptr;
+    lv_obj_t *m_interval_label = nullptr;
+    lv_obj_t *m_auto_switch = nullptr;
 
     // Wallpaper list
     std::vector<std::string> m_wallpapers;
@@ -84,6 +86,7 @@ private:
 
     // Settings
     uint32_t m_interval_ms = 10000;      // Image switch interval
+    bool m_auto_play = true;             // Auto slideshow
 
     // Touch handling
     lv_point_t m_touch_start;
