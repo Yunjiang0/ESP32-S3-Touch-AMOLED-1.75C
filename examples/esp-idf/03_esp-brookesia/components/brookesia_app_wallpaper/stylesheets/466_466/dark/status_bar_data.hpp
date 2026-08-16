@@ -10,21 +10,30 @@
 
 namespace esp_brookesia::systems::phone {
 
+/**
+ * 圆形屏幕状态栏边距计算：
+ * 466x466 圆形屏幕，圆心 (233, 233)，半径 233
+ * 状态栏高度 32px，中心位置 y=16
+ * 距离圆心: d = 233 - 16 = 217
+ * 可用半宽: sqrt(233² - 217²) = sqrt(54289 - 47089) = sqrt(7200) ≈ 85
+ * 左右各需要裁剪: (233 - 85) = 148 像素
+ * 考虑到图标和文字需要一定空间，设置 start_offset = 100
+ */
 constexpr StatusBar::AreaData STYLESHEET_466_466_DARK_STATUS_BAR_AREA_DATA(int w_percent, StatusBar::AreaAlign align)
 {
     return {
         .size = gui::StyleSize::RECT_PERCENT(w_percent, 100),
         .layout_column_align = align,
-        .layout_column_start_offset = 30,  // 增加边距避免圆角裁剪
+        .layout_column_start_offset = 100,  // 圆形屏幕需要更大的边距
         .layout_column_pad = 4,
     };
 }
 
 constexpr StatusBar::Data STYLESHEET_466_466_DARK_STATUS_BAR_DATA = {
     .main = {
-        .size = gui::StyleSize::RECT_W_PERCENT(100, 36),
-        .background_color = gui::StyleColor::COLOR(0x38393A),
-        .text_font = gui::StyleFont::SIZE(16),
+        .size = gui::StyleSize::RECT_W_PERCENT(100, 32),  // 稍微降低高度
+        .background_color = gui::StyleColor::COLOR(0x000000),  // 纯黑背景融入圆形边缘
+        .text_font = gui::StyleFont::SIZE(14),  // 稍小的字体
         .text_color = gui::StyleColor::COLOR(0xFFFFFF),
     },
     .area = {
@@ -34,7 +43,7 @@ constexpr StatusBar::Data STYLESHEET_466_466_DARK_STATUS_BAR_DATA = {
             STYLESHEET_466_466_DARK_STATUS_BAR_AREA_DATA(50, StatusBar::AreaAlign::END),
         },
     },
-    .icon_common_size = gui::StyleSize::SQUARE(20),
+    .icon_common_size = gui::StyleSize::SQUARE(18),  // 稍小的图标
     .battery = {
         .area_index = 1,
         .icon_data = {
@@ -70,7 +79,7 @@ constexpr StatusBar::Data STYLESHEET_466_466_DARK_STATUS_BAR_DATA = {
     .flags = {
         .enable_battery_icon = 1,
         .enable_battery_icon_common_size = 1,
-        .enable_battery_label = 1,
+        .enable_battery_label = 0,  // 圆形屏幕空间有限，不显示电量百分比文字
         .enable_wifi_icon = 1,
         .enable_wifi_icon_common_size = 1,
         .enable_clock = 1,
