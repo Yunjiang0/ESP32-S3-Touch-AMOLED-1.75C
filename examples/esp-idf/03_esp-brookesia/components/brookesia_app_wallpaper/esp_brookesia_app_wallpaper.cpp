@@ -513,7 +513,7 @@ void WallpaperApp::openSettingsPanel()
     lv_obj_align(interval_label, LV_ALIGN_TOP_LEFT, 0, 32);
     
     lv_obj_t *interval_value = lv_label_create(m_settings_panel);
-    lv_label_set_text_fmt(interval_value, "%d sec", m_interval_ms / 1000);
+    lv_label_set_text_fmt(interval_value, "%lu sec", (unsigned long)(m_interval_ms / 1000));
     lv_obj_set_style_text_color(interval_value, lv_color_hex(0x00FF00), 0);
     lv_obj_set_style_text_font(interval_value, &lv_font_montserrat_14, 0);
     lv_obj_align(interval_value, LV_ALIGN_TOP_RIGHT, 0, 32);
