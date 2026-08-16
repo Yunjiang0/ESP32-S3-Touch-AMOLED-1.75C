@@ -41,7 +41,7 @@ WallpaperApp *WallpaperApp::requestInstance(bool use_status_bar, bool use_naviga
 }
 
 WallpaperApp::WallpaperApp(bool use_status_bar, bool use_navigation_bar):
-    App(APP_NAME, &esp_brookesia_app_icon_launcher_wallpaper_112_112, false, use_status_bar, use_navigation_bar)
+    App(APP_NAME, &esp_brookesia_app_icon_launcher_wallpaper_112_112, true, use_status_bar, use_navigation_bar)
 {
 }
 
@@ -188,7 +188,8 @@ void WallpaperApp::clearPlayer()
         m_image_obj = nullptr;
     }
     if (m_player_obj) {
-        lv_obj_del(m_player_obj);
+        // m_player_obj may hold img_dsc pointer for images
+        heap_caps_free(m_player_obj);
         m_player_obj = nullptr;
     }
     if (m_player_buf) {
@@ -215,16 +216,64 @@ void WallpaperApp::showImage(const std::string &path)
 {
     clearPlayer();
 
-    m_image_obj = lv_image_create(m_root);
+    // Read file into memory first
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0) {
+        ESP_UTILS_LOGE("Image file not found: %s", path.c_str());
+        return;
+    }
+
+    size_t file_size = st.st_size;
     
-    // Use LVGL file path format
-    std::string lv_path = "A:" + path;
-    lv_image_set_src(m_image_obj, lv_path.c_str());
+    // Allocate buffer for image data (will be kept until clearPlayer)
+    m_player_buf = heap_caps_malloc(file_size, MALLOC_CAP_SPIRAM);
+    if (!m_player_buf) {
+        ESP_UTILS_LOGE("Failed to allocate memory for image (%d bytes)", (int)file_size);
+        return;
+    }
+
+    FILE *f = fopen(path.c_str(), "rb");
+    if (!f) {
+        ESP_UTILS_LOGE("Failed to open image: %s", path.c_str());
+        heap_caps_free(m_player_buf);
+        m_player_buf = nullptr;
+        return;
+    }
+
+    if (fread(m_player_buf, 1, file_size, f) != file_size) {
+        ESP_UTILS_LOGE("Failed to read image file");
+        fclose(f);
+        heap_caps_free(m_player_buf);
+        m_player_buf = nullptr;
+        return;
+    }
+    fclose(f);
+
+    // Setup image descriptor
+    lv_image_dsc_t *img_dsc = (lv_image_dsc_t *)heap_caps_malloc(sizeof(lv_image_dsc_t), MALLOC_CAP_SPIRAM);
+    if (!img_dsc) {
+        ESP_UTILS_LOGE("Failed to allocate image descriptor");
+        heap_caps_free(m_player_buf);
+        m_player_buf = nullptr;
+        return;
+    }
+
+    memset(img_dsc, 0, sizeof(lv_image_dsc_t));
+    img_dsc->header.magic = LV_IMAGE_HEADER_MAGIC;
+    img_dsc->header.cf = LV_COLOR_FORMAT_RAW;
+    img_dsc->data_size = file_size;
+    img_dsc->data = (const uint8_t *)m_player_buf;
+
+    m_image_obj = lv_image_create(m_root);
+    lv_image_set_src(m_image_obj, img_dsc);
     lv_obj_center(m_image_obj);
 
     // Allow gestures to pass through
     lv_obj_add_flag(m_image_obj, LV_OBJ_FLAG_GESTURE_BUBBLE);
     lv_obj_clear_flag(m_image_obj, LV_OBJ_FLAG_CLICKABLE);
+
+    // Store img_dsc for cleanup (reuse m_player_obj pointer)
+    m_player_obj = (lv_obj_t *)img_dsc;
 }
 
 void WallpaperApp::showGif(const std::string &path)

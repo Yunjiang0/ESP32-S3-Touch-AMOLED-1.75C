@@ -73,7 +73,7 @@ ClockApp *ClockApp::requestInstance(bool use_status_bar, bool use_navigation_bar
 }
 
 ClockApp::ClockApp(bool use_status_bar, bool use_navigation_bar):
-    App(APP_NAME, &esp_brookesia_app_icon_launcher_clock_112_112, false, use_status_bar, use_navigation_bar)
+    App(APP_NAME, &esp_brookesia_app_icon_launcher_clock_112_112, true, use_status_bar, use_navigation_bar)
 {
 }
 
