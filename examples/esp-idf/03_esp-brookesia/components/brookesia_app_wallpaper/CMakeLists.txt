@@ -6,5 +6,4 @@ idf_component_register(
         "."
     REQUIRES
         brookesia_core
-        esp_littlefs
 )
