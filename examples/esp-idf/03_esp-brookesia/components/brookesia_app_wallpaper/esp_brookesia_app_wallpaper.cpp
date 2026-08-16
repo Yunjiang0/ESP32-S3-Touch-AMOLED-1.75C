@@ -54,18 +54,8 @@ bool WallpaperApp::run(void)
 {
     ESP_UTILS_LOGD("Run");
 
-    // Mount LittleFS if not already mounted
-    esp_vfs_littlefs_conf_t conf = {
-        .base_path = "/storage",
-        .partition_label = "storage",
-        .format_if_mount_failed = true,
-        .dont_mount = false,
-    };
-    
-    esp_err_t ret = esp_vfs_littlefs_register(&conf);
-    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-        ESP_UTILS_LOGE("Failed to mount LittleFS: %s", esp_err_to_name(ret));
-    }
+    // NOTE: LittleFS must be mounted before this app runs (in main.cpp)
+    // Mounting here would crash because we're in the LVGL task context
 
     // Create root container
     m_root = lv_obj_create(lv_scr_act());

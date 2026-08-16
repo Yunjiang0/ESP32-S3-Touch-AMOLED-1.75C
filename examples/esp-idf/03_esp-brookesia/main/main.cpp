@@ -7,6 +7,8 @@
 #include "bsp/esp-bsp.h"
 #include "esp_brookesia.hpp"
 #include "boost/thread.hpp"
+#include "esp_littlefs.h"
+#include <sys/stat.h>
 #ifdef ESP_UTILS_LOG_TAG
 #   undef ESP_UTILS_LOG_TAG
 #endif
@@ -27,12 +29,41 @@ using namespace esp_brookesia::systems::phone;
 constexpr bool EXAMPLE_SHOW_MEM_INFO = false;
 constexpr uint32_t LVGL_TASK_STACK_SIZE = 40 * 1024;
 
+static void mount_littlefs(void)
+{
+    esp_vfs_littlefs_conf_t conf = {
+        .base_path = "/storage",
+        .partition_label = "storage",
+        .format_if_mount_failed = true,
+        .dont_mount = false,
+    };
+
+    esp_err_t ret = esp_vfs_littlefs_register(&conf);
+    if (ret == ESP_OK) {
+        ESP_UTILS_LOGI("LittleFS mounted successfully");
+        
+        // Create wallpapers directory if it doesn't exist
+        struct stat st;
+        if (stat("/storage/wallpapers", &st) != 0) {
+            mkdir("/storage/wallpapers", 0755);
+            ESP_UTILS_LOGI("Created /storage/wallpapers directory");
+        }
+    } else if (ret == ESP_ERR_INVALID_STATE) {
+        ESP_UTILS_LOGI("LittleFS already mounted");
+    } else {
+        ESP_UTILS_LOGE("Failed to mount LittleFS: %s", esp_err_to_name(ret));
+    }
+}
+
 extern "C" void app_main(void)
 {
     // Force link the wallpaper app
     (void)esp_brookesia_app_wallpaper_force_link;
 
     ESP_UTILS_LOGI("Display ESP-Brookesia phone demo");
+
+    // Mount LittleFS before starting LVGL (must be done in main task, not LVGL task)
+    mount_littlefs();
 
     /* Brookesia screen creation exceeds the adapter's 8 KB default on this board. */
 #pragma GCC diagnostic push
