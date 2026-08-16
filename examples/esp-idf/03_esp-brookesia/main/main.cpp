@@ -16,6 +16,9 @@
 // Force link wallpaper app component
 #include "esp_brookesia_app_wallpaper.hpp"
 
+// 466x466 round display stylesheet
+#include "stylesheets/466_466/dark/stylesheet.hpp"
+
 using namespace esp_brookesia;
 using namespace esp_brookesia::gui;
 using namespace esp_brookesia::systems::phone;
@@ -66,9 +69,9 @@ extern "C" void app_main(void)
         // When operating on non-GUI tasks, should acquire a lock before operating on LVGL
         LvLockGuard gui_guard;
 
-        /* Use 480x480 dark stylesheet (closest to 466x466 round display) */
-        ESP_UTILS_CHECK_FALSE_EXIT(phone->addStylesheet(ESP_BROOKESIA_PHONE_480_480_DARK_STYLESHEET()), "Add stylesheet failed");
-        ESP_UTILS_CHECK_FALSE_EXIT(phone->activateStylesheet(ESP_BROOKESIA_PHONE_480_480_DARK_STYLESHEET()), "Activate stylesheet failed");
+        /* Use 466x466 dark stylesheet for round display */
+        ESP_UTILS_CHECK_FALSE_EXIT(phone->addStylesheet(ESP_BROOKESIA_PHONE_466_466_DARK_STYLESHEET()), "Add stylesheet failed");
+        ESP_UTILS_CHECK_FALSE_EXIT(phone->activateStylesheet(ESP_BROOKESIA_PHONE_466_466_DARK_STYLESHEET()), "Activate stylesheet failed");
 
         /* Begin the phone */
         ESP_UTILS_CHECK_FALSE_EXIT(phone->begin(), "Begin failed");
