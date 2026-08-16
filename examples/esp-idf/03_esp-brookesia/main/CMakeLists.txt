@@ -2,7 +2,7 @@ idf_component_register(
     SRCS "main.cpp"
     INCLUDE_DIRS "."
                  "../components/brookesia_app_wallpaper/stylesheets/466_466/dark"
-    PRIV_REQUIRES brookesia_app_wallpaper brookesia_app_clock brookesia_core)
+    PRIV_REQUIRES brookesia_app_wallpaper brookesia_app_clock brookesia_core joltwallet__littlefs)
 
 target_compile_options(${COMPONENT_LIB} PUBLIC -Wno-missing-field-initializers)
 

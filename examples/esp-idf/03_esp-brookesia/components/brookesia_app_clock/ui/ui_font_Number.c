@@ -9,7 +9,7 @@
  * Font: Futura Std Condensed Light Oblique, 66 px, 4 bpp.
  ******************************************************************************/
 
-#include "../ui.h"
+#include "lvgl.h"
 
 #ifndef UI_FONT_NUMBER
 #define UI_FONT_NUMBER 1

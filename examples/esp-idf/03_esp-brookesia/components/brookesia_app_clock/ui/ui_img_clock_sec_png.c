@@ -8,7 +8,7 @@
 // LVGL version: 9.1.0
 // Project name: Smart_Gadget
 
-#include "../ui.h"
+#include "lvgl.h"
 
 #ifndef LV_ATTRIBUTE_MEM_ALIGN
 #define LV_ATTRIBUTE_MEM_ALIGN
