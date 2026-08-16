@@ -17,14 +17,14 @@ namespace esp_brookesia::systems::phone {
  * 距离圆心: d = 233 - 16 = 217
  * 可用半宽: sqrt(233² - 217²) = sqrt(54289 - 47089) = sqrt(7200) ≈ 85
  * 左右各需要裁剪: (233 - 85) = 148 像素
- * 考虑到图标和文字需要一定空间，设置 start_offset = 100
+ * 考虑到图标和文字需要一定空间，设置 start_offset = 120
  */
 constexpr StatusBar::AreaData STYLESHEET_466_466_DARK_STATUS_BAR_AREA_DATA(int w_percent, StatusBar::AreaAlign align)
 {
     return {
         .size = gui::StyleSize::RECT_PERCENT(w_percent, 100),
         .layout_column_align = align,
-        .layout_column_start_offset = 100,  // 圆形屏幕需要更大的边距
+        .layout_column_start_offset = 120,  // 圆形屏幕需要更大的边距
         .layout_column_pad = 4,
     };
 }
