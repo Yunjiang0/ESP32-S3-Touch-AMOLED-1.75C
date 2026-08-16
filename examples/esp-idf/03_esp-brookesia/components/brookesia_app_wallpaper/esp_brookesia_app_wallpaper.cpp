@@ -540,17 +540,17 @@ void WallpaperApp::openSettingsPanel()
     };
     
     // Interval 行
-    char interval_buf[16];
+    char interval_buf[32];
     snprintf(interval_buf, sizeof(interval_buf), "%lu sec", (unsigned long)(m_interval_ms / 1000));
     create_row("Interval", interval_buf);
     
     // Wallpapers 行
-    char count_buf[16];
+    char count_buf[32];
     snprintf(count_buf, sizeof(count_buf), "%d", (int)m_wallpapers.size());
     create_row("Wallpapers", count_buf);
     
     // Current 行
-    char current_buf[16];
+    char current_buf[32];
     snprintf(current_buf, sizeof(current_buf), "%d / %d", m_current_index + 1, (int)m_wallpapers.size());
     create_row("Current", current_buf);
     
