@@ -133,6 +133,12 @@ extern "C" void app_main(void)
                 "Refresh status bar failed"
             );
         }, 1000, phone);
+
+        /* Initialize status bar icons */
+        // Set battery to 100% (no real battery on this board, just for display)
+        phone->getDisplay().getStatusBar()->setBatteryPercent(false, 100);
+        // Set WiFi icon to closed (will be updated when WiFi is connected)
+        phone->getDisplay().getStatusBar()->setWifiIconState(StatusBar::WifiState::CLOSED);
     }
 
     if constexpr (EXAMPLE_SHOW_MEM_INFO) {
