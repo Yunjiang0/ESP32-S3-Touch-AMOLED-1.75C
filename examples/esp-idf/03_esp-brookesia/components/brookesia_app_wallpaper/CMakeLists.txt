@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "esp_brookesia_app_wallpaper.cpp"
+        "assets/esp_brookesia_app_icon_launcher_wallpaper_112_112.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        brookesia_core
+        esp_littlefs
+)
